@@ -1,0 +1,516 @@
+SQL> --트랜잭션은 ddl 에 의해 커밋돼 버린다.
+SQL> select table_nmae from user_tables;
+select table_nmae from user_tables
+       *
+ERROR at line 1:
+ORA-00904: "TABLE_NMAE": invalid identifier 
+
+
+SQL> select table_name from user_tables;
+
+TABLE_NAME                                                                      
+------------------------------------------------------------                    
+NATION                                                                          
+MEMBER                                                                          
+TOPCATEGORY                                                                     
+SUBCATEGORY                                                                     
+DEPT                                                                            
+EMP                                                                             
+
+6 rows selected.
+
+SQL> create table test(
+  2  name varchar2(20)
+  3  );
+
+Table created.
+
+SQL> insert into test(name) valuse('tiger');
+insert into test(name) valuse('tiger')
+                       *
+ERROR at line 1:
+ORA-00926: missing VALUES keyword 
+
+
+SQL> insert into test(name) values('tiger');
+
+1 row created.
+
+SQL> create table test2(
+  2  phone varchar2(13)
+  3  );
+
+Table created.
+
+SQL> select * from test;
+
+NAME                                                                            
+----------------------------------------                                        
+tiger                                                                           
+
+SQL> roolback;
+SP2-0042: unknown command "roolback" - rest of line ignored.
+SQL> rollback;
+
+Rollback complete.
+
+SQL> select * from test;
+
+NAME                                                                            
+----------------------------------------                                        
+tiger                                                                           
+
+SQL> --최소급여를 받는 사원의 이름, 부서명, 급여를 출력
+SQL> ED
+Wrote file afiedt.buf
+
+  1  SELECT ENAME, DNAME, SAL
+  2  FROM DEPT D, EMP E
+  3  WHERE D.DEPNO=E,DEPTNO
+  4  AND SAL = (
+  5  SELECT MIN(SAL) FROM EMP
+  6* );
+SQL> /
+WHERE D.DEPNO=E,DEPTNO
+               *
+ERROR at line 3:
+ORA-00933: SQL command not properly ended 
+
+
+SQL> ED
+Wrote file afiedt.buf
+
+  1    SELECT  ENAME,  DNAME, SAL
+  2    FROM  DEPT D, EMP E
+  3    WHERE D.DEPTNO = E.DEPTNO
+  4    AND SAL = (
+  5      	SELECT MIN(SAL) FROM EMP
+  6*   )
+SQL> /
+
+ENAME                DNAME                               SAL                    
+-------------------- ---------------------------- ----------                    
+SMITH                RESEARCH                            800                    
+
+SQL> ED
+Wrote file afiedt.buf
+
+  1    SELECT  ENAME,  DNAME, SAL
+  2    FROM  DEPT D, EMP E
+  3    WHERE D.DEPTNO = E.DEPTNO
+  4    AND SAL = (
+  5      	SELECT MIN(SAL) FROM EMP
+  6*    )
+SQL> /
+
+ENAME                DNAME                               SAL                    
+-------------------- ---------------------------- ----------                    
+SMITH                RESEARCH                            800                    
+
+SQL> --ADAMS나 JAMES가 근무하는 부서와 같은 부서에서 근무하는 사원의 이름, 부서번호
+SQL> --부서명을 출력
+SQL> ED
+Wrote file afiedt.buf
+
+  1    SELECT ENAME, E.DEPTNO, DNAME
+  2    FROM  DEPT D, EMP E
+  3    WHERE D.DEPTNO = E.DEPTNO  
+  4    AND  E.DEPTNO = (
+  5    	SELECT DEPTNO FROM EMP
+  6     	WHERE ENAME='ADAMS' OR ENAME='JAMES'
+  7*    )
+SQL> /
+  	SELECT DEPTNO FROM EMP
+  	*
+ERROR at line 5:
+ORA-01427: single-row subquery returns more than one row 
+
+
+SQL> ED
+Wrote file afiedt.buf
+
+  1    SELECT ENAME, E.DEPTNO, DNAME
+  2    FROM  DEPT D, EMP E
+  3    WHERE D.DEPTNO = E.DEPTNO  
+  4    AND  E.DEPTNO IN (
+  5     	SELECT DEPTNO FROM EMP
+  6      	WHERE ENAME='ADAMS' OR ENAME='JAMES'
+  7*    )
+SQL> /
+
+ENAME                    DEPTNO DNAME                                           
+-------------------- ---------- ----------------------------                    
+SCOTT                        20 RESEARCH                                        
+SMITH                        20 RESEARCH                                        
+ADAMS                        20 RESEARCH                                        
+FORD                         20 RESEARCH                                        
+JONES                        20 RESEARCH                                        
+MARTIN                       30 SALES                                           
+BLAKE                        30 SALES                                           
+JAMES                        30 SALES                                           
+ALLEN                        30 SALES                                           
+TURNER                       30 SALES                                           
+WARD                         30 SALES                                           
+
+11 rows selected.
+
+SQL> ED
+Wrote file afiedt.buf
+
+  1    SELECT ENAME, E.DEPTNO, DNAME
+  2    FROM  DEPT D, EMP E
+  3    WHERE D.DEPTNO = E.DEPTNO  
+  4    AND  E.DEPTNO IN (
+  5      	SELECT DEPTNO FROM EMP
+  6      	WHERE ENAME IN ('ADAMS' , 'JAMES')
+  7*    )
+SQL> /
+
+ENAME                    DEPTNO DNAME                                           
+-------------------- ---------- ----------------------------                    
+SCOTT                        20 RESEARCH                                        
+SMITH                        20 RESEARCH                                        
+ADAMS                        20 RESEARCH                                        
+FORD                         20 RESEARCH                                        
+JONES                        20 RESEARCH                                        
+MARTIN                       30 SALES                                           
+BLAKE                        30 SALES                                           
+JAMES                        30 SALES                                           
+ALLEN                        30 SALES                                           
+TURNER                       30 SALES                                           
+WARD                         30 SALES                                           
+
+11 rows selected.
+
+SQL> -- 급여의 합에서 급여평균을 뺀 급여보다 적은 급여를 받는 사원의 이름, 부서명,부서번호
+SQL> --를 출력
+SQL> SELECT * FROM DEPT;
+
+    DEPTNO DNAME                        LOC                                     
+---------- ---------------------------- --------------------------              
+        10 ACCOUNTING                   NEW YORK                                
+        20 RESEARCH                     DALLAS                                  
+        30 SALES                        CHICAGO                                 
+        40 OPERATIONS                   BOSTON                                  
+
+SQL> ED
+Wrote file afiedt.buf
+
+  1    SELECT ENAME, DNAME, E.DEPTNO
+  2    FROM DEPT D, EMP E
+  3    WHERE D.DEPTNO =E.DEPTNO
+  4    AND  SAL < (	
+  5      	SELECT SUM(SAL)-AVG(SAL) FROM EMP
+  6*    )
+SQL> /
+
+ENAME                DNAME                            DEPTNO                    
+-------------------- ---------------------------- ----------                    
+SMITH                RESEARCH                             20                    
+ALLEN                SALES                                30                    
+WARD                 SALES                                30                    
+JONES                RESEARCH                             20                    
+MARTIN               SALES                                30                    
+BLAKE                SALES                                30                    
+CLARK                ACCOUNTING                           10                    
+SCOTT                RESEARCH                             20                    
+KING                 ACCOUNTING                           10                    
+TURNER               SALES                                30                    
+ADAMS                RESEARCH                             20                    
+
+ENAME                DNAME                            DEPTNO                    
+-------------------- ---------------------------- ----------                    
+JAMES                SALES                                30                    
+FORD                 RESEARCH                             20                    
+MILLER               ACCOUNTING                           10                    
+
+14 rows selected.
+
+SQL> --업무별 사원수와 그 업무를 출력
+SQL> SELECT JOB
+  2  FROM EMP
+  3  ;
+
+JOB                                                                             
+------------------                                                              
+CLERK                                                                           
+SALESMAN                                                                        
+SALESMAN                                                                        
+MANAGER                                                                         
+SALESMAN                                                                        
+MANAGER                                                                         
+MANAGER                                                                         
+ANALYST                                                                         
+PRESIDENT                                                                       
+SALESMAN                                                                        
+CLERK                                                                           
+
+JOB                                                                             
+------------------                                                              
+CLERK                                                                           
+ANALYST                                                                         
+CLERK                                                                           
+
+14 rows selected.
+
+SQL> SELECT JOB
+  2  FROM EMP
+  3  GROUP BY JOB
+  4  ;
+
+JOB                                                                             
+------------------                                                              
+CLERK                                                                           
+SALESMAN                                                                        
+PRESIDENT                                                                       
+MANAGER                                                                         
+ANALYST                                                                         
+
+SQL> SELECT JOB, ENMAE
+  2  ;
+
+*
+ERROR at line 2:
+ORA-00923: FROM keyword not found where expected 
+
+
+SQL> SELECT JOB, ENAME
+  2  FROM EMP
+  3  GROUP BY JOB, ENAME
+  4  ;
+
+JOB                ENAME                                                        
+------------------ --------------------                                         
+SALESMAN           WARD                                                         
+MANAGER            CLARK                                                        
+ANALYST            FORD                                                         
+CLERK              MILLER                                                       
+CLERK              SMITH                                                        
+ANALYST            SCOTT                                                        
+SALESMAN           TURNER                                                       
+MANAGER            BLAKE                                                        
+PRESIDENT          KING                                                         
+CLERK              ADAMS                                                        
+MANAGER            JONES                                                        
+
+JOB                ENAME                                                        
+------------------ --------------------                                         
+SALESMAN           MARTIN                                                       
+CLERK              JAMES                                                        
+SALESMAN           ALLEN                                                        
+
+14 rows selected.
+
+SQL> SELECT JOB, COUNT(*)
+  2  FROM EMP
+  3  GROUP BY JOB
+  4  ;
+
+JOB                  COUNT(*)                                                   
+------------------ ----------                                                   
+CLERK                       4                                                   
+SALESMAN                    4                                                   
+PRESIDENT                   1                                                   
+MANAGER                     3                                                   
+ANALYST                     2                                                   
+
+SQL> SELECT JOB, COUNT(*)
+  2  FROM EMP
+  3  GROUP BY JOB
+  4  HAVING COUNT(*) > 2
+  5  ;
+
+JOB                  COUNT(*)                                                   
+------------------ ----------                                                   
+CLERK                       4                                                   
+SALESMAN                    4                                                   
+MANAGER                     3                                                   
+
+SQL> SELECT JOB, COUNT(*)
+  2  FROM EMP
+  3  GROUP BY JOB
+  4  HAVING JOB LIKE 'C%'
+  5  '
+  6  '
+  7  ;
+'
+*
+ERROR at line 5:
+ORA-00933: SQL command not properly ended 
+
+
+SQL> SELECT JOB, COUNT(*)
+  2  FROM EMP
+  3  GROUP BY JOB
+  4  HAVING JOB LIKE 'C%'
+  5  ;
+
+JOB                  COUNT(*)                                                   
+------------------ ----------                                                   
+CLERK                       4                                                   
+
+SQL> SELECY ENAME, SAL, E.DEPTNO, LOC
+SP2-0734: unknown command beginning "SELECY ENA..." - rest of line ignored.
+SQL> SELECT ENAME, SAL, E.DEPTNO, LOC
+  2  FROM DEPT D, EMP E
+  3  WHERE D.DEPTNO=E.DEPTNO
+  4  AND SAL < (
+  5  SELECT AVG(SAL) FROP EMP
+  6  WHERE HIREDATE > (SELECT HIREDATE FROM EMP WHERE ENAME='MILLER')
+  7  ;
+SELECT AVG(SAL) FROP EMP
+*
+ERROR at line 5:
+ORA-00921: unexpected end of SQL command 
+
+
+SQL> SELECT ENAME, SAL, E.DEPTNO, LOC
+  2  FROM DEPT D, EMP E
+  3  WHERE D.DEPTNO=E.DEPTNO
+  4  AND SAL < (
+  5  SELECT AVG(SAL) FROM EMP
+  6  WHERE HIREDATE > (SELECT HIREDATE FROM EMP WHERE ENAME='MILLER');
+SELECT AVG(SAL) FROM EMP
+*
+ERROR at line 5:
+ORA-00921: unexpected end of SQL command 
+
+
+SQL> ED
+Wrote file afiedt.buf
+
+  1     SELECT ENAME, SAL, E.DEPTNO, LOC
+  2     FROM DEPT D, EMP E
+  3     WHERE D.DEPTNO=E.DEPTNO
+  4     AND SAL < (
+  5      	SELECT AVG(SAL) FROM EMP
+  6      	WHERE HIREDATE > ( SELECT HIREDATE FROM EMP WHERE ENAME='MILLER')
+  7*    )
+SQL> /
+
+ENAME                       SAL     DEPTNO LOC                                  
+-------------------- ---------- ---------- --------------------------           
+SMITH                       800         20 DALLAS                               
+ALLEN                      1600         30 CHICAGO                              
+WARD                       1250         30 CHICAGO                              
+MARTIN                     1250         30 CHICAGO                              
+TURNER                     1500         30 CHICAGO                              
+ADAMS                      1100         20 DALLAS                               
+JAMES                       950         30 CHICAGO                              
+MILLER                     1300         10 NEW YORK                             
+
+8 rows selected.
+
+SQL> --모든 사원의 커미션의 합보다 급여가 높은 사원의 이름, 급여,부서번호, 부서위치를 출력
+SQL> ED
+Wrote file afiedt.buf
+
+  1     SELECT ENAME, SAL, E.DEPTNO, LOC
+  2     FROM  DEPT D, EMP E
+  3     WHERE D.DEPTNO=E.DEPTNO
+  4*    AND SAL> ( SELECT SUM(COMM) FROM EMP)
+SQL> /
+
+ENAME                       SAL     DEPTNO LOC                                  
+-------------------- ---------- ---------- --------------------------           
+JONES                      2975         20 DALLAS                               
+BLAKE                      2850         30 CHICAGO                              
+CLARK                      2450         10 NEW YORK                             
+SCOTT                      3000         20 DALLAS                               
+KING                       5000         10 NEW YORK                             
+FORD                       3000         20 DALLAS                               
+
+6 rows selected.
+
+SQL> --숙제)소속 사원수가 가장 적은 부서에 근무하는 사원의 이름, 부서번호, 부서명, 위치
+SQL> --숙제2) 부서위치가 CHICAGO 인 부서에 근무하는 사원중 급여가 가장 높은 사원의
+SQL> --이름 , 급여, 버서명, 부서위치를 출력
+SQL> SELECT ENAME, E.DEPTNO, DNAME, LOC
+  2  FROM DEPT D, EMP E
+  3  WHERE D.DEPTNO=D.DEPTNO
+  4  AND DNAME < (SELECT MIN(ENAME) FROM EMP);
+
+ENAME                    DEPTNO DNAME                                           
+-------------------- ---------- ----------------------------                    
+LOC                                                                             
+--------------------------                                                      
+SMITH                        20 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+ALLEN                        30 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+WARD                         30 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+
+ENAME                    DEPTNO DNAME                                           
+-------------------- ---------- ----------------------------                    
+LOC                                                                             
+--------------------------                                                      
+JONES                        20 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+MARTIN                       30 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+BLAKE                        30 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+
+ENAME                    DEPTNO DNAME                                           
+-------------------- ---------- ----------------------------                    
+LOC                                                                             
+--------------------------                                                      
+CLARK                        10 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+SCOTT                        20 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+KING                         10 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+
+ENAME                    DEPTNO DNAME                                           
+-------------------- ---------- ----------------------------                    
+LOC                                                                             
+--------------------------                                                      
+TURNER                       30 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+ADAMS                        20 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+JAMES                        30 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+
+ENAME                    DEPTNO DNAME                                           
+-------------------- ---------- ----------------------------                    
+LOC                                                                             
+--------------------------                                                      
+FORD                         20 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+MILLER                       10 ACCOUNTING                                      
+NEW YORK                                                                        
+                                                                                
+
+14 rows selected.
+
+SQL> SETSIZE 100
+SP2-0734: unknown command beginning "SETSIZE 10..." - rest of line ignored.
+SQL> LINESIZE 120
+SP2-0734: unknown command beginning "LINESIZE 1..." - rest of line ignored.
+SQL> SELECT  ENAME, SAL, D.DEPTNO, LOC
+  2  FROM DEPT D, EMP E
+  3  WHERE D.DEPTNO=LOC
+  4  ;
+WHERE D.DEPTNO=LOC
+               *
+ERROR at line 3:
+ORA-01722: invalid number 
+
+
+SQL> SPOOL OFF
